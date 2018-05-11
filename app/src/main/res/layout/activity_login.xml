@@ -43,6 +43,7 @@
             android:textColor="#333"
             android:gravity="center"
             android:id="@+id/username"
+            android:text="android"
             android:layout_weight="1" />
 
         <EditText
@@ -54,6 +55,7 @@
             android:textColor="#333"
             android:gravity="center"
             android:id="@+id/roomname"
+            android:text="kurento"
             android:layout_weight="1" />
 
     </LinearLayout>

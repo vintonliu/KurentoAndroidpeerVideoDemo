@@ -15,6 +15,8 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 
 import org.java_websocket.WebSocketImpl;
 
@@ -36,7 +38,7 @@ import fi.vtt.nubomedia.utilitiesandroid.LooperExecutor;
 import fi.vtt.nubotest.util.Constants;
 import fi.vtt.nubotest.util.RoomRecordAPI;
 
-public class MainActivity extends Activity implements RoomListener {
+public class MainActivity extends AppCompatActivity implements RoomListener {
     private SharedPreferences mSharedPreferences;
     public static String username, roomname;
     private String TAG = "MainActivity";
@@ -45,6 +47,7 @@ public class MainActivity extends Activity implements RoomListener {
     private int roomId=0;
     private EditText mCallNumET, mTextMessageET;
     private TextView mUsernameTV, mTextMessageTV;
+    private String mUserList;
     Handler mHandler;
     public boolean mBounded;
     public static Context context;
@@ -54,6 +57,9 @@ public class MainActivity extends Activity implements RoomListener {
         super.onCreate(savedInstanceState);
         WebSocketImpl.DEBUG = true;
         setContentView(R.layout.activity_main);
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        setSupportActionBar(myToolbar);
+
         MainActivity.context = getApplicationContext();
         this.mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 
@@ -165,10 +171,11 @@ public class MainActivity extends Activity implements RoomListener {
         if (kurentoRoomAPI != null) {
             Constants.id++;
             roomId = Constants.id;
-            Log.i(TAG, "Joinroom: User: "+this.username+", Room: "+this.roomname+" id:"+roomId);
+            logAndToast("Joinroom: User: "+this.username+", Room: "+this.roomname+" id:"+roomId);
+//            Log.i(TAG, "Joinroom: User: "+this.username+", Room: "+this.roomname+" id:"+roomId);
             if (kurentoRoomAPI.isWebSocketConnected()) {
                 kurentoRoomAPI.sendJoinRoom(this.username, this.roomname, roomId);
-                Log.i("zhsy","roomId======="+roomId);
+                Log.i(TAG,"roomId======="+roomId);
             }
         }
         else
@@ -196,7 +203,7 @@ public class MainActivity extends Activity implements RoomListener {
     public void makeCall(View view){
         String callNum = mCallNumET.getText().toString();
         Log.i(TAG, "makeCall: " + callNum);
-        if (callNum.isEmpty() || callNum.equals(this.username)){
+        if (callNum.equals(this.username)){
             showToast("Enter a valid user ID to call.");
             return;
         }
@@ -219,7 +226,7 @@ public class MainActivity extends Activity implements RoomListener {
     /**TODO: Debate who calls who. Should one be on standby? Or use State API for busy/available
      * Check that user is online. If they are, dispatch the call by publishing to their standby
      *   channel. If the publish was successful, then change activities over to the video chat.
-     * The called user will then have the option to accept of decline the call. If they accept,
+     * The called user will then have the option to accept or decline the call. If they accept,
      *   they will be brought to the video chat activity as well, to connect video/audio. If
      *   they decline, a hangup will be issued, and the VideoChat adapter's onHangup callback will
      *   be invoked.
@@ -286,9 +293,11 @@ public class MainActivity extends Activity implements RoomListener {
                     if (key.equals("id")) {
                         final String otherUser = map.get("id");
                         logAndToast("User: " + otherUser);
+//                        mUserList.concat(otherUser);
                         MainActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+//                                String userList = mPtList.toString();
                                 mCallNumET.setText(otherUser);
                             }
                         });
@@ -359,6 +368,7 @@ public class MainActivity extends Activity implements RoomListener {
 
     @Override
     public void onRoomConnected() {
+        Log.i(TAG, "onRoomConnected");
         if (kurentoRoomAPI.isWebSocketConnected()) {
             joinRoom();
             MainActivity.this.runOnUiThread(new Runnable() {
@@ -367,13 +377,12 @@ public class MainActivity extends Activity implements RoomListener {
                     mUsernameTV.setText("User: " + username + "\nRoom: " + roomname);
                 }
             });
-
-
         }
     }
 
     @Override
     public void onRoomDisconnected() {
+        Log.i(TAG, "onRoomDisconnected");
         MainActivity.this.runOnUiThread(new Runnable() {
             @Override
             public void run() {

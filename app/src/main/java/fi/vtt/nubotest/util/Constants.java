@@ -26,7 +26,7 @@ public class Constants {
     public static final String STATUS_OFFLINE   = "Offline";
     public static final String STATUS_BUSY      = "Busy";
     public static final String SERVER_NAME      = "serverName";
-    public static final String DEFAULT_SERVER   = "wss://192.168.1.113:8443/room";
+    public static final String DEFAULT_SERVER   = "https://120.132.120.136:8443/room";
 //    public static final String DEFAULT_SERVER   = "wss://193.166.161.152:8443/room";
     public static String SERVER_ADDRESS_SET_BY_USER = "wss://192.168.1.113:8443/room";
     public static final String ROOM_NAME    = "fi.vtt.nubotest.SHARED_PREFS.ROOM_NAME";

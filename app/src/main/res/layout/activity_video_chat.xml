@@ -41,7 +41,7 @@
                 android:src="@drawable/ic_action_send_now"
                 android:onClick="receiveFromRemote"
                 android:id="@+id/imageButton"
-                android:layout_marginEnd="47dp"
+                android:layout_marginEnd="16dp"
                 android:layout_alignParentTop="true"
                 android:layout_alignParentEnd="true" />
 
@@ -49,11 +49,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="Receive from peer"
+                android:text="Receive from"
                 android:id="@+id/receive_prompt"
                 android:layout_alignParentTop="true"
-                android:layout_alignParentStart="true"
-                android:layout_marginStart="35dp" />
+                android:layout_alignParentStart="true"/>
+
+            <EditText
+                android:id="@+id/edtParticipant"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:hint="Enter a name"
+                android:inputType="textShortMessage"
+                android:maxLines="1"
+                android:layout_alignParentTop="true"
+                android:layout_marginLeft="16dp"
+                android:layout_toRightOf="@id/receive_prompt"/>
 
         </RelativeLayout>
 

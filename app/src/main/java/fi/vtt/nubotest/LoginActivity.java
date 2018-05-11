@@ -1,11 +1,14 @@
 package fi.vtt.nubotest;
 
-import android.app.Activity;
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -15,14 +18,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import java.util.concurrent.Executor;
-
-import fi.vtt.nubomedia.kurentoroomclientandroid.KurentoRoomAPI;
-import fi.vtt.nubomedia.kurentoroomclientandroid.RoomError;
-import fi.vtt.nubomedia.kurentoroomclientandroid.RoomListener;
-import fi.vtt.nubomedia.kurentoroomclientandroid.RoomNotification;
-import fi.vtt.nubomedia.kurentoroomclientandroid.RoomResponse;
-import fi.vtt.nubomedia.utilitiesandroid.LooperExecutor;
 import fi.vtt.nubotest.util.Constants;
 
 /**
@@ -30,7 +25,9 @@ import fi.vtt.nubotest.util.Constants;
  * Saves the username in SharedPreferences.
  */
 public class LoginActivity extends AppCompatActivity {
-
+    private static final int MY_PERMISSIONS_REQUEST_CAMERA = 100;
+    private static final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 101;
+    private static final int MY_PERMISSIONS_REQUEST = 102;
     private String TAG = "LoginActivity";
 
     private EditText mUsername, mRoomname;
@@ -60,7 +57,7 @@ public class LoginActivity extends AppCompatActivity {
             mUsername.setText(lastUsername);
         }
         */
-
+        askForPermissions();
     }
 
     @Override
@@ -81,6 +78,9 @@ public class LoginActivity extends AppCompatActivity {
         if (id == R.id.action_settings) {
             Intent intent = new Intent(mContext, PreferencesActivity.class);
             startActivity(intent);
+            return true;
+        } else if (id == R.id.action_sign_out) {
+            MainActivity.getKurentoRoomAPIInstance().sendLeaveRoom(++Constants.id);
             return true;
         }
 
@@ -115,12 +115,39 @@ public class LoginActivity extends AppCompatActivity {
     public void onStop() {
         super.onStop();
         Log.i(TAG, "onStop");
-    };
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
         Log.i(TAG, "onDestroy");
-    };
+    }
+
+    public void askForPermissions() {
+        if ((ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) &&
+                (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
+                        != PackageManager.PERMISSION_GRANTED)) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.CAMERA, android.Manifest.permission.RECORD_AUDIO},
+                    MY_PERMISSIONS_REQUEST);
+        } else if (ContextCompat.checkSelfPermission(this,
+                android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.RECORD_AUDIO},
+                    MY_PERMISSIONS_REQUEST_RECORD_AUDIO);
+        } else if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.CAMERA},
+                    MY_PERMISSIONS_REQUEST_CAMERA);
+        }
+    }
+
+    private boolean arePermissionGranted() {
+        return (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_DENIED) &&
+                (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_DENIED);
+    }
 
     /**
      * Takes the username from the EditText, check its validity and saves it if valid.
@@ -139,8 +166,12 @@ public class LoginActivity extends AppCompatActivity {
         //edit.apply();
         edit.commit();
 
-        Intent intent = new Intent(mContext, MainActivity.class);
-        startActivity(intent);
+        if (arePermissionGranted()) {
+            Intent intent = new Intent(mContext, MainActivity.class);
+            startActivity(intent);
+        } else {
+            showToast("Permissions Failed.");
+        }
 
         /*
 
