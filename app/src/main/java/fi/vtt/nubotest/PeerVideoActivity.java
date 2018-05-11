@@ -56,6 +56,7 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
     private GLSurfaceView videoView;
 
     private SharedPreferences mSharedPreferences;
+    private Map<Integer, String> mUserVideoSubscribes;
 
     private int publishVideoRequestId;
     private int sendIceCandidateRequestId;
@@ -94,6 +95,7 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
         mHandler = new Handler();
 
         mRemoteVideoRenders = new HashMap<MediaStream, VideoRenderer.Callbacks>();
+        mUserVideoSubscribes = new HashMap<Integer, String>();
 
         Bundle extras = getIntent().getExtras();
         if (extras == null || !extras.containsKey(Constants.USER_NAME)) {
@@ -312,6 +314,8 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
                         Log.d(TAG, "Sending " + sessionDescription.type);
                         publishVideoRequestId = ++Constants.id;
 
+                        mUserVideoSubscribes.put(publishVideoRequestId, calluser);
+
                         String sender = calluser + "_webcam";
                         Log.i(TAG, "sender " + sender);
 
@@ -377,9 +381,9 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
         Log.i(TAG, "onRemoteStreamRemoved");
 
         // add by vinton
-//        VideoRenderer.Callbacks remoteRender = mRemoteVideoRenders.get(mediaStream);
-//        VideoRendererGui.remove(remoteRender);
-//        mRemoteVideoRenders.remove(mediaStream);
+        VideoRenderer.Callbacks remoteRender = mRemoteVideoRenders.get(mediaStream);
+        VideoRendererGui.remove(remoteRender);
+        mRemoteVideoRenders.remove(mediaStream);
     }
 
     @Override
@@ -420,6 +424,7 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
     @Override
     public void onRoomError(RoomError error) {
         Log.e(TAG, "OnRoomError:" + error);
+
     }
 
     @Override
@@ -460,7 +465,26 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
   
 //                }
 //            });
-        }  
+        }
+        // added by vinton
+        if (notification.getMethod().equals("participantLeft")) {
+            Map<String, Object> map = notification.getParams();
+            final String user = map.get("name").toString();
+
+//            publishVideoRequestId = ++Constants.id;
+//            MainActivity.getKurentoRoomAPIInstance().sendUnsubscribeFromVideo(user, "webcam", publishVideoRequestId);
+
+            String connectionId = "pt_" + user;
+            nbmWebRTCPeer.closeConnection(connectionId);
+
+            PeerVideoActivity.this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    logAndToast("participantLeft: " + user);
+                }
+            });
+        }
+
     }  
     @Override
     public void onRoomConnected() {
@@ -470,5 +494,23 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
     @Override
     public void onRoomDisconnected() {
         Log.i(TAG, "onRoomDisconnected");
+    }
+
+    private void logAndToast(String message) {
+        Log.i(TAG, message);
+        showToast(message);
+    }
+
+    public void showToast(String string) {
+        try {
+            CharSequence text = string;
+            int duration = Toast.LENGTH_SHORT;
+
+            Toast toast = Toast.makeText(this, text, duration);
+            toast.show();
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
     }
 }
