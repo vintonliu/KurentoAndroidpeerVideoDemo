@@ -208,6 +208,17 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
 
     @Override
     protected void onDestroy() {
+        Log.i(TAG, "onDestory");
+
+        if (localRender != null) {
+            VideoRendererGui.remove(localRender);
+            localRender = null;
+        }
+        if (remoteRender != null)
+        {
+            VideoRendererGui.remove(remoteRender);
+            remoteRender = null;
+        }
         super.onDestroy();
     }
 
@@ -466,6 +477,11 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
 //                }
 //            });
         }
+        if (notification.getMethod().equals("participantUnpublished")) {
+            Map<String, Object> map = notification.getParams();
+            final String user = map.get("id").toString();
+        }
+
         // added by vinton
         if (notification.getMethod().equals("participantLeft")) {
             Map<String, Object> map = notification.getParams();

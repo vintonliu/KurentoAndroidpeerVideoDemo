@@ -33,5 +33,4 @@ dependencies {
     compile('fi.vtt.nubomedia:kurento-room-client-android:1.0.12') { transitive=true }
     compile('fi.vtt.nubomedia:jsonrpc-ws-android:1.0.6@aar') { transitive=true }
     compile('fi.vtt.nubomedia:utilities-android:1.0.2@aar') { transitive=true }
-//    compile('io.pristine:libjingle:11139@aar') { transitive=true }
 }

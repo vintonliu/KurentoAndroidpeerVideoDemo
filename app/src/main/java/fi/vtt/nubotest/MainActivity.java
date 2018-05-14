@@ -162,8 +162,18 @@ public class MainActivity extends AppCompatActivity implements RoomListener {
         Log.i(TAG, "onDestroy");
         if (kurentoRoomAPI.isWebSocketConnected()) {
             kurentoRoomAPI.sendLeaveRoom(roomId);
+            kurentoRoomAPI.disconnectWebSocket();
         }
-        kurentoRoomAPI.disconnectWebSocket();
+
+        /* release immediately */
+        if(executor == null) {
+            executor.requestStop();
+            executor = null;
+        }
+        kurentoRoomAPI.removeObserver(this);
+        kurentoRoomAPI = null;
+
+        Log.i(TAG, "onDestroy finish");
         super.onDestroy();
     }
 
@@ -310,8 +320,8 @@ public class MainActivity extends AppCompatActivity implements RoomListener {
 
     @Override
     public void onRoomError(RoomError error) {
-        Log.wtf(TAG, error.toString());
-        logAndToast(error.toString());
+        Log.e(TAG, error.toString());
+//        logAndToast(error.toString());
 
         if(error.getCode().equals("104")) {
             finish();
