@@ -1,8 +1,10 @@
 package fi.vtt.nubotest;
 
 import android.app.ListActivity;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.PixelFormat;
+import android.media.AudioManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
@@ -81,6 +83,8 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
     private CallState callState;
     private HashMap<MediaStream, VideoRenderer.Callbacks> mRemoteVideoRenders;
 
+    AudioManager mAudioManager;
+
     private enum CallState{
         IDLE, PUBLISHING, PUBLISHED, WAITING_REMOTE_USER, RECEIVING_REMOTE_USER,PATICIPANT_JOINED,RECEIVING_PATICIPANT,  
     }
@@ -93,6 +97,9 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
         setContentView(R.layout.activity_video_chat);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         mHandler = new Handler();
+
+        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        mAudioManager.setMode(AudioManager.STREAM_VOICE_CALL);
 
         mRemoteVideoRenders = new HashMap<MediaStream, VideoRenderer.Callbacks>();
         mUserVideoSubscribes = new HashMap<Integer, String>();
@@ -210,6 +217,8 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
     protected void onDestroy() {
         Log.i(TAG, "onDestory");
 
+        MainActivity.getKurentoRoomAPIInstance().removeObserver(this);
+
         if (localRender != null) {
             VideoRendererGui.remove(localRender);
             localRender = null;
@@ -252,6 +261,15 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
         finish();
     }
 
+    public void toggleSpeaker(View view) {
+        if (mAudioManager.isSpeakerphoneOn()) {
+            mAudioManager.setSpeakerphoneOn(false);
+        } else {
+            mAudioManager.setSpeakerphoneOn(true);
+        }
+
+    }
+
     public void receiveFromRemote(View view){
         Log.i(TAG, "receiveFromRemote: callState = " + callState.toString());
 //        if ( callState == CallState.PUBLISHED ||
@@ -284,6 +302,25 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
      * Terminates the current call and ends activity
      */
     private void endCall() {
+        if (callState != CallState.IDLE) {
+            /* unsubscribe video from sender */
+            for (Map.Entry<String, Boolean> entry : MainActivity.userPublishList.entrySet()) {
+                if (entry.getValue()) {
+                    publishVideoRequestId = ++Constants.id;
+                    MainActivity.getKurentoRoomAPIInstance().sendUnsubscribeFromVideo(entry.getKey(), "webcam", publishVideoRequestId);
+                }
+            }
+
+            REMOTE_Y = 0;
+
+            /* unpublish local video stream */
+            publishVideoRequestId = ++Constants.id;
+            MainActivity.getKurentoRoomAPIInstance().sendUnpublishVideo(publishVideoRequestId);
+
+        }
+
+        mAudioManager.setSpeakerphoneOn(false);
+
         callState = CallState.IDLE;
         try
         {
@@ -480,18 +517,23 @@ public class PeerVideoActivity extends ListActivity implements NBMWebRTCPeer.Obs
         if (notification.getMethod().equals("participantUnpublished")) {
             Map<String, Object> map = notification.getParams();
             final String user = map.get("id").toString();
+
+            String connectionId = "pt_" + user;
+            nbmWebRTCPeer.closeConnection(connectionId);
+
+            PeerVideoActivity.this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    logAndToast("participantUnpublished: " + user);
+                }
+            });
         }
 
         // added by vinton
         if (notification.getMethod().equals("participantLeft")) {
             Map<String, Object> map = notification.getParams();
             final String user = map.get("name").toString();
-
-//            publishVideoRequestId = ++Constants.id;
-//            MainActivity.getKurentoRoomAPIInstance().sendUnsubscribeFromVideo(user, "webcam", publishVideoRequestId);
-
-            String connectionId = "pt_" + user;
-            nbmWebRTCPeer.closeConnection(connectionId);
+            Log.i(TAG, "participantLeft user: " + user);
 
             PeerVideoActivity.this.runOnUiThread(new Runnable() {
                 @Override

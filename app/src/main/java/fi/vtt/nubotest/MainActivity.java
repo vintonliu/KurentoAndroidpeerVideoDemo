@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -51,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements RoomListener {
     Handler mHandler;
     public boolean mBounded;
     public static Context context;
+    public static Map<String, Boolean> userPublishList = new HashMap<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -59,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements RoomListener {
         setContentView(R.layout.activity_main);
         Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         MainActivity.context = getApplicationContext();
         this.mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
@@ -303,6 +306,10 @@ public class MainActivity extends AppCompatActivity implements RoomListener {
                     if (key.equals("id")) {
                         final String otherUser = map.get("id");
                         logAndToast("User: " + otherUser);
+                        if (!map.get("streams").isEmpty()) {
+                            userPublishList.put(otherUser, true);
+                        }
+
 //                        mUserList.concat(otherUser);
                         MainActivity.this.runOnUiThread(new Runnable() {
                             @Override
@@ -331,8 +338,8 @@ public class MainActivity extends AppCompatActivity implements RoomListener {
     @Override
     public void onRoomNotification(RoomNotification notification) {
         Log.i(TAG, notification.toString());
+        Map<String, Object> map = notification.getParams();
         if(notification.getMethod().equals("sendMessage")) {
-            Map<String, Object> map = notification.getParams();
             final String user = map.get("user").toString();
             final String message = map.get("message").toString();
             MainActivity.this.runOnUiThread(new Runnable() {
@@ -346,7 +353,6 @@ public class MainActivity extends AppCompatActivity implements RoomListener {
         }
 
         if(notification.getMethod().equals("participantLeft")) {
-            Map<String, Object> map = notification.getParams();
             final String user = map.get("name").toString();
 
             MainActivity.this.runOnUiThread(new Runnable() {
@@ -360,9 +366,7 @@ public class MainActivity extends AppCompatActivity implements RoomListener {
             });
         }
 
-        if(notification.getMethod().equals("participantJoined"))
-        {
-            Map<String, Object> map = notification.getParams();
+        if(notification.getMethod().equals("participantJoined")) {
             final String user = map.get("id").toString();
             MainActivity.this.runOnUiThread(new Runnable() {
                 @Override
@@ -373,6 +377,11 @@ public class MainActivity extends AppCompatActivity implements RoomListener {
                     mHandler.postDelayed(clearMessageView, 3000);
                 }
             });
+        }
+
+        if (notification.getMethod().equals("participantPublished")) {
+            final String user = map.get("id").toString();
+            userPublishList.put(user, true);
         }
     }
 

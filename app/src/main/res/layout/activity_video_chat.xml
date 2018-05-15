@@ -82,6 +82,7 @@
         />
 
     <ImageButton
+        android:id="@+id/imgbtnHangup"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
@@ -89,5 +90,14 @@
         android:background="@drawable/round_button"
         android:onClick="hangup"
         />
+
+    <ImageButton
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="10dp"
+        android:src="@drawable/ic_action_volume_on"
+        android:background="@drawable/round_button_send"
+        android:layout_toRightOf="@+id/imgbtnHangup"
+        android:onClick="toggleSpeaker"/>
 
 </RelativeLayout>
